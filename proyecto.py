@@ -80,6 +80,38 @@ def compara(a,b): # Función para checar si dos mintérminos difieren en un bit
                 return (False,None)
     return (True,mismatch_index)
 
+def multiplica(x,y): # Multiplica 2 expresiones
+    res = []
+    for i in x:
+        for j in y:
+            tmp = multiplica(i,j)
+            res.append(tmp) if len(tmp) != 0 else None
+    return res
+
+def BuscarIPE(x): # Función para encontrar los implicantes primos esenciales
+    res = []
+    for i in x:
+        if len(x[i]) == 1:
+            res.append(x[i][0]) if x[i][0] not in res else None
+    return res
+
+def BuscarVariables(x): # Función para encontrar las variables en los términos. Por ejemplo, el mintérmino --01 tiene a C' y D como variables
+    var_list = []
+    for i in range(len(x)):
+        if x[i] == '0':
+            var_list.append(chr(i+65)+"'")
+        elif x[i] == '1':
+            var_list.append(chr(i+65))
+    return var_list
+
+
+def remueveTerminos(_chart,terms): # Remueve mintérminos que ya fueron seleccionados previamente
+    for i in terms:
+        for j in buscaMinterminos(i):
+            try:
+                del _chart[j]
+            except KeyError:
+                pass
 
 
 
@@ -158,4 +190,21 @@ for i in all_pi:
             chart[j] = [i]
     print('\n'+'-'*(len(mt)*(sz+1)+16))
 # Terminamos la impresión y procesamiento de los implicantes primos
+
+IPE = BuscarIPE(chart) # Encontramos los implicantes primos escenciales
+print("\nImplicantes Primos Escenciales: "+', '.join(str(i) for i in IPE))
+remueveTerminos(chart,IPE) #Removemos los Implicantes Primos Escenciales de las columnas relacionadas de la impresión
+
+if(len(chart) == 0): # Si los imintérminos premanecen después de remover los Implicantes Primos de las columnas relacionadas
+    resultado_final = [BuscarVariables(i) for i in IPE] # Resultado Final solamente con los Implicantes Primos Escenciales
+else: # Sino, proseguimos con el método de Petricl para una mejor simplificación
+    P = [[BuscarVariables(j) for j in chart[i]] for i in chart]
+    while len(P)>1: # Nos quedaremos multiplicando hara que obtenfamos la suma de productos de P
+        P[1] = multiplica(P[0],P[1])
+        P.pop(0)
+    resultado_final = [min(P[0],key=len)] # Seleccionamos el término con menor númerno de variables de P
+    resultado_final.extend(BuscarVariables(i) for i in IPE) # Agregamos los Implicantes Primos Escenciales en la solución
+print('\nSolución: F = '+' + '.join(''.join(i) for i in resultado_final))
+
+input("\nPresione enter para salir ")
 
