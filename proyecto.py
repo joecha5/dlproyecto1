@@ -122,7 +122,7 @@ minterminos = mt
 minterminos.sort()
 
 
-size = len(bin (mintermino[-1]))-2
+size = len(bin (minterminos[-1]))-2
 grupos,all_pi = {},set()
 
 
