@@ -1,210 +1,264 @@
-def muestra_primerosGrupos(grupos):
-    #Comenzamos la impresión de la agrupación primaria
-    print("\n\n\n\nNúmero de Gpo.\tMintérminos\t\tExpresión en BCD")
-    print ('='*60)
-    for i in sorted(grupos.keys()):
-        print("%5d:"%i) # Prints group number
-        for j in grupos[i]:
-            print("\t\t    %-20d%s"%(int(j,2),j)) # Imprime los mintérminos y su representación binaria (BCD)
-        print('-'*60)
-    #Término de la impresión de la agrupación primara
+from pylatex import Document, Section, Subsection, Table, Package
+from pylatex.utils import italic, escape_latex
+import pdflatex
+import sys
 
+# Funcion que genera una lista de minterminos dado un string separado por comas
+# Recibe el nombre del archivo
+# Retorna una lista con los minterminos en decimal
+def generarMinterminos(archivoMin):
 
+    archivo = open(archivoMin, "r")
+    linea = archivo.read()
 
-def recorta(x): # Recorta la lista
+    mt = []
+    mintermino = ""
+
+    for i in linea:
+        if i == " ":
+            pass
+        elif i == ",":
+            mt.append(int(mintermino))
+            mintermino = ""
+        else:
+            mintermino += i
+
+    if(mintermino != ""):
+        mt.append(int(mintermino))
+
+    return mt
+
+# Funcion para encontrar los implicantes primos esenciales
+# Recibe Grupos, es un diccionario con un identificador de grupo que separa por cantidad de 1's en cada mintermino
+# Retorna una lista de los minterminos
+def BuscarIPE(grupos):
+    resultado = []
+    for i in grupos:
+        if len(grupos[i]) == 1:
+            if grupos[i][0] not in resultado:
+                resultado.append(grupos[i][0]) 
+            else: 
+                None
+    return resultado
+
+# Función para encontrar las variables en los términos. Por ejemplo, el mintérmino --01 tiene a C' y D como variables
+# Recibe Mintermino, es una representacion del mintermino analizado para revisar cuales son las variables
+# Retorna una lista de variables del mintermino como en el ejemplo mostrado retorna [C',D]
+def BuscarVariables(mintermino):
+    lista_variables = []
+    for i in range(len(mintermino)):
+        if mintermino[i] == '0':
+            lista_variables.append(chr(i+65)+"'")
+        elif mintermino[i] == '1':
+            lista_variables.append(chr(i+65))
+    return lista_variables
+
+# Funcion para recortar los minterminos que son iguales, recibe grupos
+# Recibe Grupos, es un diccionario con un identificador de grupo que separa por cantidad de 1's en cada mintermino
+# Retorna una lista de los minterminos eliminando los que son iguales
+def recorta(grupos):
     elementos_recortados = []
-    for i in x:
-        elementos_recortados.extend(x[i])
+    for i in grupos:
+        elementos_recortados.extend(grupos[i])
     return elementos_recortados
 
-def buscaMinterminos(a): # Función para encontrar a los mintérminos mezclados. Por ejemplo, 10-1 son obtenidos al combinar 9(1001) y 11(1011)
-    gaps = a.count('-')
-    if gaps == 0:
-        return [str(int(a,2))]
-    x = [bin(i)[2:].zfill(gaps) for i in range(pow(2,gaps))]
-    temp = []
+
+# Función para encontrar a los mintérminos mezclados. Por ejemplo, 10-1 son obtenidos al combinar 9(1001) y 11(1011)
+# Recibe Mintermino, es una representacion del mintermino analizado para revisar cuales son los posibles terminos para este mintermino
+# Retorna una lista de las posibilidades del mintermino en string
+def buscaMinterminos(mintermino):
+    gaps = mintermino.count('-')
+
+    if gaps == 0: #Si no contiene - lo pasa a binario y lo envia
+        return [str(int(mintermino,2))]
+
+
+    x = [bin(i)[2:] for i in range(pow(2,gaps))]
+
+    resultado = []
+    
     for i in range(pow(2,gaps)):
-        temp2,ind = a[:],-1
+
+        temp,ind = mintermino[:],-1
+
         for j in x[0]:
             if ind != -1:
-                ind = ind+temp2[ind+1:].find('-')+1
+                ind = ind+temp[ind+1:].find('-')+1
             else:
-                ind = temp2[ind+1:].find('-')
-            temp2 = temp2[:ind]+j+temp2[ind+1:]
-        temp.append(str(int(temp2,2)))
-        x.pop(0)
-    return temp
+                ind = temp[ind+1:].find('-')
 
-def compara(a,b): # Función para checar si dos mintérminos difieren en un bit
-    c = 0
-    for i in range(len(a)):
-        if a[i] != b[i]:
+            temp = temp[:ind]+j+temp[ind+1:]
+            
+        resultado.append(str(int(temp,2)))
+        x.pop(0)
+    
+    return resultado
+
+# Función para checar si dos mintérminos difieren en un bit
+# Recibe dos minterminos, son representaciones de minterminos en strings
+# Retorna una tupla, (si difieren en un bit y el indice del bit de diferencia)
+def compara(mintermino1,mintermino2):
+    tmp = 0
+    for i in range(len(mintermino1)):
+        if mintermino1[i] != mintermino2[i]:
             mismatch_index = i
-            c += 1
-            if c>1:
+            tmp += 1
+            if tmp > 1:
                 return (False,None)
     return (True,mismatch_index)
 
 
-def recorta(x): # Recorta la lista
-    elementos_recortados = []
-    for i in x:
-        elementos_recortados.extend(x[i])
-    return elementos_recortados
-
-def buscaMinterminos(a): # Función para encontrar a los mintérminos mezclados. Por ejemplo, 10-1 son obtenidos al combinar 9(1001) y 11(1011)
-    gaps = a.count('-')
-    if gaps == 0:
-        return [str(int(a,2))]
-    x = [bin(i)[2:].zfill(gaps) for i in range(pow(2,gaps))]
-    temp = []
-    for i in range(pow(2,gaps)):
-        temp2,ind = a[:],-1
-        for j in x[0]:
-            if ind != -1:
-                ind = ind+temp2[ind+1:].find('-')+1
-            else:
-                ind = temp2[ind+1:].find('-')
-            temp2 = temp2[:ind]+j+temp2[ind+1:]
-        temp.append(str(int(temp2,2)))
-        x.pop(0)
-    return temp
-
-def compara(a,b): # Función para checar si dos mintérminos difieren en un bit
-    c = 0
-    for i in range(len(a)):
-        if a[i] != b[i]:
-            mismatch_index = i
-            c += 1
-            if c>1:
-                return (False,None)
-    return (True,mismatch_index)
-
-def multiplica(x,y): # Multiplica 2 expresiones
-    res = []
-    for i in x:
-        for j in y:
-            tmp = multiplica(i,j)
-            res.append(tmp) if len(tmp) != 0 else None
-    return res
-
-def BuscarIPE(x): # Función para encontrar los implicantes primos esenciales
-    res = []
-    for i in x:
-        if len(x[i]) == 1:
-            res.append(x[i][0]) if x[i][0] not in res else None
-    return res
-
-def BuscarVariables(x): # Función para encontrar las variables en los términos. Por ejemplo, el mintérmino --01 tiene a C' y D como variables
-    var_list = []
-    for i in range(len(x)):
-        if x[i] == '0':
-            var_list.append(chr(i+65)+"'")
-        elif x[i] == '1':
-            var_list.append(chr(i+65))
-    return var_list
-
-
-def remueveTerminos(_chart,terms): # Remueve mintérminos que ya fueron seleccionados previamente
+# Funciona para remover mintérminos que ya fueron seleccionados previamente
+# Recibe el diccionario con todos los minterminos de cada grupo y una lista con los minterminos esenciales
+# No retorna nada pero modifica la variable grupos
+def remueveTerminos(grupos, terms): 
     for i in terms:
         for j in buscaMinterminos(i):
             try:
-                del _chart[j]
+                del grupos[j]
             except KeyError:
                 pass
 
 
-
-print('Por favor ingrese los términos separados por un espacio')
-mt = [int(i) for i in input("Ingrese los mintérminos ").strip().split()]
-mt.sort()
-minterminos = mt
-minterminos.sort()
-
-
-size = len(bin (mintermino[-1]))-2
-grupos,all_pi = {},set()
-
-
-# Comenzamos la agrupación primaria
-for minterm in minterminos:
-    try:
-        grupos[bin(minterm).count('1')].append(bin(minterm)[2:].zfill(size)) #Append al diccionario que contiene la cantidad de 1s
-    except KeyError:
-        grupos[bin(minterm).count('1')] = [bin(minterm)[2:].zfill(size)] #Si no se puede agregar se crea un nuevo key con los grupos
-# Término de la agrupación primaria
-# grupos = {cantidad de 1s: [grupos que solo tengan esa cantidad]}
-muestra_primerosGrupos(grupos)
+# Funcion que pasa todos los minterminos literales a su definicion binaria y los agrupa por cantidad de 1's que poseen
+# Recibe el diccionario donde guarda los grupos y los minterminos ingresados en el archivo
+# No retorna, modifica el diccionario de 
+def agrupacionPrimaria(grupos, minterminos):
+    size = len(bin(minterminos[-1]))-2
+    for minterm in minterminos:
+        try:
+            grupos[bin(minterm).count('1')].append(bin(minterm)[2:].zfill(size)) #Append al diccionario que contiene la cantidad de 1s
+        except KeyError:
+            grupos[bin(minterm).count('1')] = [bin(minterm)[2:].zfill(size)] #Si no se puede agregar se crea un nuevo key con los grupos
 
 
+# Funcion para mostrar los primeros grupos
+# Recibe Grupos, es un diccionario con un identificador de grupo que separa por cantidad de 1's en cada mintermino
+# No Retorna nada
+def muestra_primerosGrupos(grupos):
+    print("\n\n\n\nNúmero de Gpo.\tMintérminos\t\tExpresión en BCD\n%s"%('='*60))
+    for i in sorted(grupos.keys()):
+        print("%5d:"%i) 
+        for j in grupos[i]:
+            print("\t\t    %-20d%s"%(int(j,2),j)) # Imprime los mintérminos y su representación binaria (BCD)
+        print('-'*60)
 
-# Proceso para crear las tablas y encontrar los implicantes primos 
-while True:
-    tmp = grupos.copy()
-    grupos,m,marcados,debo_parar = {},0,set(),True
-    l = sorted(list(tmp.keys()))
-    for i in range(len(l)-1):
-        for j in tmp[l[i]]: # Iteración a través del grupo de elementos actual 
-            for k in tmp[l[i+1]]: # Iteración a través del siguiente grupo de elementos
-                res = compara(j,k) # Comparamos los mintérminos
-                if res[0]: # Si los mintérminos difieren solamente en un bit
-                    try:
-                        grupos[m].append(j[:res[1]]+'-'+j[res[1]+1:]) if j[:res[1]]+'-'+j[res[1]+1:] not in grupos[m] else None # Imprimimos un guión '-' en el bit que cambia y lo agregamos al grupo correspondiente
-                    except KeyError:
-                        grupos[m] = [j[:res[1]]+'-'+j[res[1]+1:]] # Si el grupo no existe, crearemos un grupo al principio y pondremos un guión '-' en el cambio de bi, además de agregarlo a un nuevo grupo
-                    debo_parar = False
-                    marcados.add(j) # Marca el elemento j
-                    marcados.add(k) # Marca el elemento k
-        m += 1
-    desmarcados_local = set(recorta(tmp)).difference(marcados) # Desmarcamos los elemntos de cada tabla
-    all_pi = all_pi.union(desmarcados_local) # Agregamos el implicante primo a la lita global.
-    print("Elementos desmarcados(Implicantes Primos) de la tabla:",None if len(desmarcados_local)==0 else ', '.join(desmarcados_local)) # Imprimimos los implicantes promos en la tabla actual
-    if debo_parar: # Si los mintérminos no pueden ser combinados
-        print("\n\nAll Implicantes Primos: ",None if len(all_pi)==0 else ', '.join(all_pi)) # Imprimimos todos los implicantes primos
-        break
-    # Imprimimos en todos los grupos siguientes
+# Funcion para analizar si los minterminos tienen implicantes primos y crear las tablas para los minterminos
+# Recibe el diccionario de grupos y la lista de todos los implicantes primos
+# Retorna una copia de los grupos actualizados, el diccionario de grupos y toda la lista de implicantes primos
+def agrupacionImplicantesPrimos(grupos, all_pi):
+
+    while True:
+
+        tmp = grupos.copy()
+        grupos,index,marcados,debo_parar = {},0,set(),True
+
+        lista = sorted(list(tmp.keys()))
+        for i in range(len(lista)-1):
+            for j in tmp[lista[i]]: # Iteración a través del grupo de elementos actual 
+                for k in tmp[lista[i+1]]: # Iteración a través del siguiente grupo de elementos
+                    res = compara(j,k) # Comparamos los mintérminos
+                    if res[0]: # Si los mintérminos difieren solamente en un bit
+                        try:
+                            grupos[index].append(j[:res[1]]+'-'+j[res[1]+1:]) if j[:res[1]]+'-'+j[res[1]+1:] not in grupos[index] else None # Imprimimos un guión '-' en el bit que cambia y lo agregamos al grupo correspondiente
+                        except KeyError:
+                            grupos[index] = [j[:res[1]]+'-'+j[res[1]+1:]] # Si el grupo no existe, crearemos un grupo al principio y pondremos un guión '-' en el cambio de bi, además de agregarlo a un nuevo grupo
+                        debo_parar = False
+                        marcados.add(j) # Marca el elemento j
+                        marcados.add(k) # Marca el elemento k
+            index += 1
+
+        desmarcados_local = set(recorta(tmp)).difference(marcados) # Desmarcamos los elemntos de cada tabla
+        all_pi = all_pi.union(desmarcados_local) # Agregamos el implicante primo a la lita global.
+
+        print("Elementos desmarcados(Implicantes Primos) de la tabla:",None if len(desmarcados_local)==0 else ', '.join(desmarcados_local)) # Imprimimos los implicantes promos en la tabla actual
+        
+        if debo_parar: # Si los mintérminos no pueden ser combinados
+            print("\n\n Todos los Implicantes Primos: ",None if len(all_pi)==0 else ', '.join(all_pi)) # Imprimimos todos los implicantes primos
+            break
+
+        muestra_implicantesPrimos(tmp)
+
+    return tmp, grupos, all_pi
+
+# Funcion para mostrar las tablas de los minterminos
+# Recibe Grupos, es un diccionario con un identificador de grupo
+# No Retorna nada
+def muestra_implicantesPrimos(grupos):
     print("\n\n\n\nNúmero de Gpo\tMintérminos\t\tExpresión en BCD\n%s"%('='*60))
     for i in sorted(grupos.keys()):
         print("%5d:"%i) # Imprimimos el número de grupo
         for j in grupos[i]:
             print("\t\t%-24s%s"%(','.join(buscaMinterminos(j)),j)) # Imprimimos los mintérminos y su representación binaria.
         print('-'*60)
-    # Terminamos la impresión de los grupos siguientes
-# Terminamos el proceso de la creación de tablas y encontrar los implicantes primos
 
+# Funcion para la impresión y procesamiento de los implicantes primos 
+# Recibe la lista de implicantes, la longitud del implicante mas largo, el diccionario modificado anteriormente y el diccionario de inicio
+# No retorna nada, modifica chart que es el diccionario final
+def procesarImplicantes(all_pi, longitud, chart, mt):
 
-# Comenzamos la impresión y procesamiento de los implicantes primos 
-sz = len(str(mt[-1])) # El número de los dígitos del mintérmino más largo
-chart = {}
-print('\n\n\nImpresión de los implicantes primos escenciales:\n\n  Mintérminos  |%s\n%s'%(' '.join((' '*(sz-len(str(i))))+str(i) for i in mt),'='*(len(mt)*(sz+1)+16)))
-for i in all_pi:
-    minterminos_mezclados,y = buscaMinterminos(i),0
-    print("%-16s|"%','.join(minterminos_mezclados),end='')
-    for j in minterminos_mezclados:
-        x = mt.index(int(j))*(sz+1) # La posicioón donde debemos de marcar con una x
-        print(' '*abs(x-y)+' '*(sz-1)+'X',end='')
-        y = x+sz
-        try:
-            chart[j].append(i) if i not in chart[j] else None # Agregamos el mintérmino a la impresión
-        except KeyError:
-            chart[j] = [i]
-    print('\n'+'-'*(len(mt)*(sz+1)+16))
-# Terminamos la impresión y procesamiento de los implicantes primos
+    for i in all_pi:
 
-IPE = BuscarIPE(chart) # Encontramos los implicantes primos escenciales
-print("\nImplicantes Primos Escenciales: "+', '.join(str(i) for i in IPE))
-remueveTerminos(chart,IPE) #Removemos los Implicantes Primos Escenciales de las columnas relacionadas de la impresión
+        minterminos_mezclados,y = buscaMinterminos(i),0
+        print("%-16s|"%','.join(minterminos_mezclados),end='')
 
-if(len(chart) == 0): # Si los imintérminos premanecen después de remover los Implicantes Primos de las columnas relacionadas
+        for j in minterminos_mezclados:
+
+            x = mt.index(int(j))*(longitud+1) # La posicioón donde debemos de marcar con una x
+            print(' '*abs(x-y)+' '*(longitud-1)+'X',end='')
+            y = x+longitud
+
+            try:
+                chart[j].append(i) if i not in chart[j] else None # Agregamos el mintérmino a la impresión
+            except KeyError:
+                chart[j] = [i]
+
+        print('\n'+'-'*(len(mt)*(longitud+1)+16))
+
+# Funcion main, se encarga de toda la logica para el llamado de los metodos ateriores
+# Recibe 2 strings, el nombre del archivo con los minterminos y nombre del pdf a generar
+# No retorna nada
+def main(archivoMin, nombrePDF):
+
+    # Configuracoin del doc y creacion del mismo
+    doc = Document()
+    doc.packages.append(Package('geometry', options = ['tmargin=1cm','lmargin=10cm']))
+
+    with doc.create(Section('The simple stuff')):
+        doc.append('Some regular text and some ' + italic('italic text. '))
+        doc.append(escape_latex('\nAlso some crazy characters: $&#{}'))
+
+    # Inicia el programa con el archivo y genera los minterminos dentro del archivo
+    mt = generarMinterminos(archivoMin)
+    mt.sort()
+    minterminos = mt
+    minterminos.sort()
+
+    grupos,all_pi = {},set()
+
+    # Proceso para crear los grupos y pasarlo a binario
+    agrupacionPrimaria(grupos, minterminos)
+    muestra_primerosGrupos(grupos)
+
+    # Proceso para crear las tablas y encontrar los implicantes primos     
+    tmp, grupos, all_pi = agrupacionImplicantesPrimos(grupos, all_pi)
+
+    # Comenzamos la impresión y procesamiento de los implicantes primos 
+    longitud = len(str(mt[-1])) # El número de los dígitos del mintérmino más largo
+    chart = {}
+    print('\n\n\nImpresión de los implicantes primos escenciales:\n\n  Mintérminos  |%s\n%s'%(' '.join((' '*(longitud-len(str(i))))+str(i) for i in mt),'='*(len(mt)*(longitud+1)+16)))
+    procesarImplicantes(all_pi, longitud, chart, mt)
+
+    IPE = BuscarIPE(chart) # Encontramos los implicantes primos escenciales
+    print("\nImplicantes Primos Escenciales: "+', '.join(str(i) for i in IPE))
+    remueveTerminos(chart,IPE) #Removemos los Implicantes Primos Escenciales de las columnas relacionadas de la impresión
+    
     resultado_final = [BuscarVariables(i) for i in IPE] # Resultado Final solamente con los Implicantes Primos Escenciales
-else: # Sino, proseguimos con el método de Petricl para una mejor simplificación
-    P = [[BuscarVariables(j) for j in chart[i]] for i in chart]
-    while len(P)>1: # Nos quedaremos multiplicando hara que obtenfamos la suma de productos de P
-        P[1] = multiplica(P[0],P[1])
-        P.pop(0)
-    resultado_final = [min(P[0],key=len)] # Seleccionamos el término con menor númerno de variables de P
-    resultado_final.extend(BuscarVariables(i) for i in IPE) # Agregamos los Implicantes Primos Escenciales en la solución
-print('\nSolución: F = '+' + '.join(''.join(i) for i in resultado_final))
+    print('\nSolución: F = '+' + '.join(''.join(i) for i in resultado_final))
 
-input("\nPresione enter para salir ")
+    input("\nPresione enter para salir y generar el PDF")
 
+    doc.generate_pdf('basic_maketitle2', clean_tex=False,compiler='pdfLaTex')
+
+if __name__ == "__main__":
+    main(sys.argv[2], sys.argv[4])
