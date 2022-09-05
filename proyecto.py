@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 from pylatex import Document, Section, Subsection, Table, Package
 from pylatex.utils import italic, escape_latex
 import pdflatex
+=======
+>>>>>>> 6604ff79e46baf99560606fedee9683505f9f5a3
 import sys
 
 # Funcion que genera una lista de minterminos dado un string separado por comas
@@ -220,6 +223,7 @@ def procesarImplicantes(all_pi, longitud, chart, mt):
 # No retorna nada
 def main(archivoMin, nombrePDF):
 
+<<<<<<< HEAD
     # Configuracoin del doc y creacion del mismo
     doc = Document()
     doc.packages.append(Package('geometry', options = ['tmargin=1cm','lmargin=10cm']))
@@ -228,6 +232,8 @@ def main(archivoMin, nombrePDF):
         doc.append('Some regular text and some ' + italic('italic text. '))
         doc.append(escape_latex('\nAlso some crazy characters: $&#{}'))
 
+=======
+>>>>>>> 6604ff79e46baf99560606fedee9683505f9f5a3
     # Inicia el programa con el archivo y genera los minterminos dentro del archivo
     mt = generarMinterminos(archivoMin)
     mt.sort()
@@ -258,7 +264,10 @@ def main(archivoMin, nombrePDF):
 
     input("\nPresione enter para salir y generar el PDF")
 
+<<<<<<< HEAD
     doc.generate_pdf('basic_maketitle2', clean_tex=False,compiler='pdfLaTex')
+=======
+>>>>>>> 6604ff79e46baf99560606fedee9683505f9f5a3
 
 if __name__ == "__main__":
     main(sys.argv[2], sys.argv[4])
