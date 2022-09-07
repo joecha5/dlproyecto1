@@ -1,9 +1,7 @@
-<<<<<<< HEAD
-from pylatex import Document, Section, Subsection, Table, Package
-from pylatex.utils import italic, escape_latex
+from pylatex import Document, Section, Subsection, Table, Tabular, Package, Command
+from pylatex import NewPage, Itemize, simple_page_number, LineBreak
+from pylatex.utils import italic, bold, escape_latex, NoEscape
 import pdflatex
-=======
->>>>>>> 6604ff79e46baf99560606fedee9683505f9f5a3
 import sys
 
 # Funcion que genera una lista de minterminos dado un string separado por comas
@@ -65,7 +63,6 @@ def recorta(grupos):
         elementos_recortados.extend(grupos[i])
     return elementos_recortados
 
-
 # Función para encontrar a los mintérminos mezclados. Por ejemplo, 10-1 son obtenidos al combinar 9(1001) y 11(1011)
 # Recibe Mintermino, es una representacion del mintermino analizado para revisar cuales son los posibles terminos para este mintermino
 # Retorna una lista de las posibilidades del mintermino en string
@@ -110,7 +107,6 @@ def compara(mintermino1,mintermino2):
                 return (False,None)
     return (True,mismatch_index)
 
-
 # Funciona para remover mintérminos que ya fueron seleccionados previamente
 # Recibe el diccionario con todos los minterminos de cada grupo y una lista con los minterminos esenciales
 # No retorna nada pero modifica la variable grupos
@@ -121,7 +117,6 @@ def remueveTerminos(grupos, terms):
                 del grupos[j]
             except KeyError:
                 pass
-
 
 # Funcion que pasa todos los minterminos literales a su definicion binaria y los agrupa por cantidad de 1's que poseen
 # Recibe el diccionario donde guarda los grupos y los minterminos ingresados en el archivo
@@ -134,22 +129,41 @@ def agrupacionPrimaria(grupos, minterminos):
         except KeyError:
             grupos[bin(minterm).count('1')] = [bin(minterm)[2:].zfill(size)] #Si no se puede agregar se crea un nuevo key con los grupos
 
-
 # Funcion para mostrar los primeros grupos
 # Recibe Grupos, es un diccionario con un identificador de grupo que separa por cantidad de 1's en cada mintermino
 # No Retorna nada
-def muestra_primerosGrupos(grupos):
-    print("\n\n\n\nNúmero de Gpo.\tMintérminos\t\tExpresión en BCD\n%s"%('='*60))
+def muestra_primerosGrupos(grupos, doc):
+    with doc.create(Section('Primer Paso')):
+        doc.append("Paso 1: ")
+        doc.append("\nPara el primer paso se pasan los minterminos a su representacion Binaria y se procese a agrupar en una tabla por su cantidad de 1's")
+        doc.append("\n\n\n")
+        with doc.create(Subsection('Tabla agrupada de minterminos')):
+            with doc.create(Tabular('| c | c | c |')) as table:
+                table.add_hline()
+                table.add_row(('Grupo', 'Mintermino', 'Binario'))
+                table.add_hline()
+                
+                for i in sorted(grupos.keys()):
+                    table.add_row((i, '', ''))
+
+                    for j in grupos[i]:
+                        table.add_row(('', int(j,2), j))
+                    
+                    table.add_hline()
+
+                table.add_hline()
+
+    '''print("\n\n\n\nNúmero de Gpo.\tMintérminos\t\tExpresión en BCD\n%s"%('='*60))
     for i in sorted(grupos.keys()):
         print("%5d:"%i) 
         for j in grupos[i]:
             print("\t\t    %-20d%s"%(int(j,2),j)) # Imprime los mintérminos y su representación binaria (BCD)
-        print('-'*60)
+        print('-'*60)'''
 
 # Funcion para analizar si los minterminos tienen implicantes primos y crear las tablas para los minterminos
 # Recibe el diccionario de grupos y la lista de todos los implicantes primos
 # Retorna una copia de los grupos actualizados, el diccionario de grupos y toda la lista de implicantes primos
-def agrupacionImplicantesPrimos(grupos, all_pi):
+def agrupacionImplicantesPrimos(grupos, all_pi, doc):
 
     while True:
 
@@ -174,26 +188,55 @@ def agrupacionImplicantesPrimos(grupos, all_pi):
         desmarcados_local = set(recorta(tmp)).difference(marcados) # Desmarcamos los elemntos de cada tabla
         all_pi = all_pi.union(desmarcados_local) # Agregamos el implicante primo a la lita global.
 
-        print("Elementos desmarcados(Implicantes Primos) de la tabla:",None if len(desmarcados_local)==0 else ', '.join(desmarcados_local)) # Imprimimos los implicantes promos en la tabla actual
+        stringTmp = "De la tabla anterior se pueden obtener Elementos que son Implicantes Primos: "
+        if len(desmarcados_local) == 0:
+            pass
+        else:
+            stringTmp += ', '.join(desmarcados_local)
+
+        doc.append(stringTmp)
         
         if debo_parar: # Si los mintérminos no pueden ser combinados
             print("\n\n Todos los Implicantes Primos: ",None if len(all_pi)==0 else ', '.join(all_pi)) # Imprimimos todos los implicantes primos
             break
 
-        muestra_implicantesPrimos(tmp)
+        muestra_implicantesPrimos(grupos, doc)
 
     return tmp, grupos, all_pi
 
 # Funcion para mostrar las tablas de los minterminos
 # Recibe Grupos, es un diccionario con un identificador de grupo
 # No Retorna nada
-def muestra_implicantesPrimos(grupos):
+def muestra_implicantesPrimos(grupos, doc):
+
+    doc.append("\n\n")
+
+    with doc.create(Subsection('Tabla agrupada de minterminos')):
+        with doc.create(Tabular('| c | c | c |')) as table:
+            table.add_hline()
+            table.add_row(('Grupo', 'Mintermino', 'Binario'))
+            table.add_hline()
+            
+            for i in sorted(grupos.keys()):
+                table.add_row((i, '', ''))
+
+                for j in grupos[i]:
+                    table.add_row(('', ', '.join(buscaMinterminos(j)), j))
+                
+                table.add_hline()
+
+            table.add_hline()
+        doc.append("\n\n")
+    
+
+    '''
     print("\n\n\n\nNúmero de Gpo\tMintérminos\t\tExpresión en BCD\n%s"%('='*60))
     for i in sorted(grupos.keys()):
         print("%5d:"%i) # Imprimimos el número de grupo
         for j in grupos[i]:
             print("\t\t%-24s%s"%(','.join(buscaMinterminos(j)),j)) # Imprimimos los mintérminos y su representación binaria.
         print('-'*60)
+        '''
 
 # Funcion para la impresión y procesamiento de los implicantes primos 
 # Recibe la lista de implicantes, la longitud del implicante mas largo, el diccionario modificado anteriormente y el diccionario de inicio
@@ -223,31 +266,53 @@ def procesarImplicantes(all_pi, longitud, chart, mt):
 # No retorna nada
 def main(archivoMin, nombrePDF):
 
-<<<<<<< HEAD
     # Configuracoin del doc y creacion del mismo
-    doc = Document()
-    doc.packages.append(Package('geometry', options = ['tmargin=1cm','lmargin=10cm']))
+    geometry_options = {"tmargin": "1cm", "lmargin": "1cm", "margin": "1cm"}
+    doc = Document(geometry_options=geometry_options, documentclass="beamer")
 
-    with doc.create(Section('The simple stuff')):
-        doc.append('Some regular text and some ' + italic('italic text. '))
-        doc.append(escape_latex('\nAlso some crazy characters: $&#{}'))
+    # Crea la primera pagina del doc con el titulo y las cosas necesarias
+    with doc.create(Section('Titlepage')):
+        doc.preamble.append(Command('title', 'Implementación del algoritmo de Quine-McCluskey'))
+        doc.preamble.append(Command('author', 'Sebastian Hidalgo, Daniela Quesada, XXXXXX XXXXXX'))
+        doc.preamble.append(Command('date', NoEscape(r'\today')))
+        doc.append(NoEscape(r'\maketitle'))
 
-=======
->>>>>>> 6604ff79e46baf99560606fedee9683505f9f5a3
+    doc.append(NewPage())
+
     # Inicia el programa con el archivo y genera los minterminos dentro del archivo
     mt = generarMinterminos(archivoMin)
     mt.sort()
     minterminos = mt
     minterminos.sort()
 
+    with doc.create(Section('Quine-McCluskey')):
+        doc.append('Quine-McCluskey')
+        doc.append('\n\nEl procedimiento de Quine-McClusky parte del hecho de que una ecuación booleana está descrita por sus mintérminos.')
+        doc.append('\n\nPara el ejemplo a elaborar se utilizan los siguientes minterminos: ')
+        doc.append(str(minterminos))
+
+    doc.append(NewPage())
+
     grupos,all_pi = {},set()
 
     # Proceso para crear los grupos y pasarlo a binario
     agrupacionPrimaria(grupos, minterminos)
-    muestra_primerosGrupos(grupos)
+    muestra_primerosGrupos(grupos, doc)
 
-    # Proceso para crear las tablas y encontrar los implicantes primos     
-    tmp, grupos, all_pi = agrupacionImplicantesPrimos(grupos, all_pi)
+    doc.append(NewPage())
+
+
+    with doc.create(Section("Segundo paso")):
+        doc.append("Paso 2:")
+        doc.append("\nPara el siguiente paso se analizan los implicantes primos de cada grupo, asi mismo tambien se crean las tablas de estos mismos con su representacion y se saca cada implicante por grupo.\n\n")
+        # Proceso para crear las tablas y encontrar los implicantes primos     
+        tmp, grupos, all_pi = agrupacionImplicantesPrimos(grupos, all_pi, doc)
+    
+    doc.append(NewPage())
+
+    with doc.create(Section("Tercer paso")):
+        doc.append("Paso 3:")
+        doc.append("\nPara el siguiente paso se muestran todos los implicantes primos que se han encontrado, luego se crea una tabla donde se representan estos minterminos esenciales y se muestran para que mintermino es esencial")
 
     # Comenzamos la impresión y procesamiento de los implicantes primos 
     longitud = len(str(mt[-1])) # El número de los dígitos del mintérmino más largo
@@ -264,10 +329,7 @@ def main(archivoMin, nombrePDF):
 
     input("\nPresione enter para salir y generar el PDF")
 
-<<<<<<< HEAD
-    doc.generate_pdf('basic_maketitle2', clean_tex=False,compiler='pdfLaTex')
-=======
->>>>>>> 6604ff79e46baf99560606fedee9683505f9f5a3
+    doc.generate_pdf(nombrePDF, clean_tex=False, compiler='pdfLaTex')
 
 if __name__ == "__main__":
     main(sys.argv[2], sys.argv[4])
