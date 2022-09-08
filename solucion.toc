@@ -1,0 +1,9 @@
+\beamer@sectionintoc {1}{Titlepage}{1}{0}{1}
+\beamer@sectionintoc {2}{Quine{-}McCluskey}{2}{0}{2}
+\beamer@sectionintoc {3}{Primer Paso}{3}{0}{3}
+\beamer@subsectionintoc {3}{1}{Tabla agrupada de minterminos}{3}{0}{3}
+\beamer@sectionintoc {4}{Segundo paso}{4}{0}{4}
+\beamer@subsectionintoc {4}{1}{Tabla agrupada de minterminos}{4}{0}{4}
+\beamer@sectionintoc {5}{Tercer paso}{5}{0}{5}
+\beamer@subsectionintoc {5}{1}{Tabla procesar minterminos}{5}{0}{5}
+\beamer@sectionintoc {6}{Cuarto paso}{6}{0}{6}

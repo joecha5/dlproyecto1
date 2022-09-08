@@ -1,0 +1,137 @@
+\documentclass{beamer}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+\usepackage{lastpage}%
+\usepackage{geometry}%
+\geometry{tmargin=1cm,lmargin=1cm,margin=1cm}%
+%
+\title{Implementación del algoritmo de Quine{-}McCluskey}%
+\author{Sebastian Hidalgo, Daniela Quesada, Joel Chavarria}%
+\date{\today}%
+%
+\begin{document}%
+\normalsize%
+\section{Titlepage}%
+\label{sec:Titlepage}%
+\maketitle
+
+%
+\newpage%
+\section{Quine{-}McCluskey}%
+\label{sec:Quine{-}McCluskey}%
+Quine{-}McCluskey%
+\newline%
+\newline%
+El procedimiento de Quine{-}McClusky parte del hecho de que una ecuación booleana está descrita por sus mintérminos.%
+\newline%
+\newline%
+Para el ejemplo a elaborar se utilizan los siguientes minterminos: %
+{[}2, 3, 5, 10{]}
+
+%
+\newpage%
+\section{Primer Paso}%
+\label{sec:PrimerPaso}%
+Paso 1: %
+\newline%
+Para el primer paso se pasan los minterminos a su representacion Binaria y se procese a agrupar en una tabla por su cantidad de 1's%
+\newline%
+\newline%
+\newline%
+%
+\subsection{Tabla agrupada de minterminos}%
+\label{subsec:Tablaagrupadademinterminos}%
+\begin{tabular}{| c | c | c |}%
+\hline%
+Grupo&Mintermino&Binario\\%
+\hline%
+1&&\\%
+&2&0010\\%
+\hline%
+2&&\\%
+&3&0011\\%
+&5&0101\\%
+&10&1010\\%
+\hline%
+\hline%
+\end{tabular}
+
+%
+\newpage%
+\section{Segundo paso}%
+\label{sec:Segundopaso}%
+Paso 2:%
+\newline%
+Para el siguiente paso se analizan los implicantes primos de cada grupo, asi mismo tambien se crean las tablas de estos mismos con su representacion y se saca cada implicante por grupo.\newline%
+\newline%
+%
+De la tabla anterior se pueden obtener Elementos que son Implicantes Primos: 0101%
+\newline%
+\newline%
+%
+\subsection{Tabla agrupada de minterminos}%
+\label{subsec:Tablaagrupadademinterminos}%
+\begin{tabular}{| c | c | c |}%
+\hline%
+Grupo&Mintermino&Binario\\%
+\hline%
+0&&\\%
+&2, 3&001{-}\\%
+&2, 10&{-}010\\%
+\hline%
+\hline%
+\end{tabular}%
+\newline%
+\newline%
+
+%
+De la tabla anterior se pueden obtener Elementos que son Implicantes Primos: {-}010, 001{-}
+
+%
+\newpage%
+\section{Tercer paso}%
+\label{sec:Tercerpaso}%
+Paso 3:%
+\newline%
+Para el siguiente paso se muestran todos los implicantes primos que se han encontrado, luego se crea una tabla donde se representan estos minterminos esenciales y se muestran para que mintermino es esencial.\newline%
+\newline%
+%
+Todos los Implicantes Primos: {-}010, 001{-}, 0101%
+\newline%
+\newline%
+%
+\subsection{Tabla procesar minterminos}%
+\label{subsec:Tablaprocesarminterminos}%
+\begin{tabular}{| c |c |c |c |c |}%
+\hline%
+Mintermino&2&3&5&10\\%
+\hline%
+2,10&X& & &X\\%
+\hline%
+2,3&X&X& & \\%
+\hline%
+5& & &X& \\%
+\hline%
+\end{tabular}%
+\newline%
+\newline%
+
+%
+\newpage%
+\section{Cuarto paso}%
+\label{sec:Cuartopaso}%
+Paso 4:%
+\newline%
+Para el siguiente paso se toman todos los implicantes luego de analizarlos anteriormente y simplificar respectiamente las posiciones de la X. \newline%
+Luego se muestra la funcion correspondiente simplificada. \newline%
+\newline%
+%
+Implicantes Primos Escenciales: {-}010, 001{-}, 0101%
+\newline%
+%
+Solución: F = B'CD' + A'B'C + A'BC'D
+
+%
+\end{document}

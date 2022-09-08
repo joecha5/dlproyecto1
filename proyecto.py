@@ -1,10 +1,10 @@
-from pylatex import Document, Section, Subsection, Table, Tabular, Package, Command
-from pylatex import NewPage, Itemize, simple_page_number, LineBreak
-from pylatex.utils import italic, bold, escape_latex, NoEscape
+from pylatex import Document, Section, Subsection, Tabular, Command
+from pylatex import NewPage
+from pylatex.utils import NoEscape
 import pdflatex
 import sys
 
-# Funcion que genera una lista de minterminos dado un string separado por comas
+# Funcion que genera una lista de minterminos dado un el nomobre del archivo donde viene un string separado por comas
 # Recibe el nombre del archivo
 # Retorna una lista con los minterminos en decimal
 def generarMinterminos(archivoMin):
@@ -197,7 +197,6 @@ def agrupacionImplicantesPrimos(grupos, all_pi, doc):
         doc.append(stringTmp)
         
         if debo_parar: # Si los mintérminos no pueden ser combinados
-            print("\n\n Todos los Implicantes Primos: ",None if len(all_pi)==0 else ', '.join(all_pi)) # Imprimimos todos los implicantes primos
             break
 
         muestra_implicantesPrimos(grupos, doc)
@@ -241,25 +240,58 @@ def muestra_implicantesPrimos(grupos, doc):
 # Funcion para la impresión y procesamiento de los implicantes primos 
 # Recibe la lista de implicantes, la longitud del implicante mas largo, el diccionario modificado anteriormente y el diccionario de inicio
 # No retorna nada, modifica chart que es el diccionario final
-def procesarImplicantes(all_pi, longitud, chart, mt):
+def procesarImplicantes(all_pi, longitud, chart, mt, doc):
 
-    for i in all_pi:
+    column = "| "
+    for i in range(len(mt)+1):
+        column += "c |"
 
-        minterminos_mezclados,y = buscaMinterminos(i),0
-        print("%-16s|"%','.join(minterminos_mezclados),end='')
+    doc.append("\n\n")
 
-        for j in minterminos_mezclados:
+    with doc.create(Subsection('Tabla procesar minterminos')):
 
-            x = mt.index(int(j))*(longitud+1) # La posicioón donde debemos de marcar con una x
-            print(' '*abs(x-y)+' '*(longitud-1)+'X',end='')
-            y = x+longitud
+        with doc.create(Tabular(column)) as table:
 
-            try:
-                chart[j].append(i) if i not in chart[j] else None # Agregamos el mintérmino a la impresión
-            except KeyError:
-                chart[j] = [i]
+            table.add_hline()
+            tupla = ["Mintermino"]
 
-        print('\n'+'-'*(len(mt)*(longitud+1)+16))
+            for i in mt:
+                tupla.append(str(i))
+
+            tupla = tuple(tupla)
+
+            table.add_row(tupla)
+            table.add_hline()
+            
+            for i in all_pi:
+
+                minterminos_mezclados,y = buscaMinterminos(i),0
+                tuplaAux = []
+
+                stringTmp2 = ','.join(minterminos_mezclados)
+
+                tuplaAux.append(stringTmp2)
+                for j in minterminos_mezclados:
+                    for k in range(len(mt)):
+                        if(len(tuplaAux) <= len(mt)):
+                            tuplaAux.append(" ")
+                        if k == mt.index(int(j)):
+                            try:
+                                tuplaAux[k+1] = "X"
+                            except:
+                                tuplaAux.append("X")
+                    try:
+                        chart[j].append(i) if i not in chart[j] else None # Agregamos el mintérmino a la impresión
+                    except KeyError:
+                        chart[j] = [i]
+
+                table.add_row(tuple(tuplaAux))
+                table.add_hline()
+
+        doc.append("\n\n")
+
+
+    
 
 # Funcion main, se encarga de toda la logica para el llamado de los metodos ateriores
 # Recibe 2 strings, el nombre del archivo con los minterminos y nombre del pdf a generar
@@ -273,7 +305,7 @@ def main(archivoMin, nombrePDF):
     # Crea la primera pagina del doc con el titulo y las cosas necesarias
     with doc.create(Section('Titlepage')):
         doc.preamble.append(Command('title', 'Implementación del algoritmo de Quine-McCluskey'))
-        doc.preamble.append(Command('author', 'Sebastian Hidalgo, Daniela Quesada, XXXXXX XXXXXX'))
+        doc.preamble.append(Command('author', 'Sebastian Hidalgo, Daniela Quesada, Joel Chavarria'))
         doc.preamble.append(Command('date', NoEscape(r'\today')))
         doc.append(NoEscape(r'\maketitle'))
 
@@ -312,24 +344,43 @@ def main(archivoMin, nombrePDF):
 
     with doc.create(Section("Tercer paso")):
         doc.append("Paso 3:")
-        doc.append("\nPara el siguiente paso se muestran todos los implicantes primos que se han encontrado, luego se crea una tabla donde se representan estos minterminos esenciales y se muestran para que mintermino es esencial")
+        doc.append("\nPara el siguiente paso se muestran todos los implicantes primos que se han encontrado, luego se crea una tabla donde se representan estos minterminos esenciales y se muestran para que mintermino es esencial.\n\n")
 
     # Comenzamos la impresión y procesamiento de los implicantes primos 
-    longitud = len(str(mt[-1])) # El número de los dígitos del mintérmino más largo
-    chart = {}
-    print('\n\n\nImpresión de los implicantes primos escenciales:\n\n  Mintérminos  |%s\n%s'%(' '.join((' '*(longitud-len(str(i))))+str(i) for i in mt),'='*(len(mt)*(longitud+1)+16)))
-    procesarImplicantes(all_pi, longitud, chart, mt)
+        longitud = len(str(mt[-1])) # El número de los dígitos del mintérmino más largo
+        chart = {}
 
-    IPE = BuscarIPE(chart) # Encontramos los implicantes primos escenciales
-    print("\nImplicantes Primos Escenciales: "+', '.join(str(i) for i in IPE))
-    remueveTerminos(chart,IPE) #Removemos los Implicantes Primos Escenciales de las columnas relacionadas de la impresión
+        stringTmp = "Todos los Implicantes Primos: "
+
+        if len(all_pi) == 0:
+            None
+        else:
+            stringTmp += ', '.join(all_pi)
+
+        doc.append(stringTmp)
+
+        procesarImplicantes(all_pi, longitud, chart, mt, doc)
+
+    doc.append(NewPage())
+
+    with doc.create(Section("Cuarto paso")):
+        doc.append("Paso 4:")
+        doc.append("\nPara el siguiente paso se toman todos los implicantes luego de analizarlos anteriormente y simplificar respectiamente las posiciones de la X. \nLuego se muestra la funcion correspondiente simplificada. \n\n")
+
+        IPE = BuscarIPE(chart) # Encontramos los implicantes primos escenciales
+        stringTmp1 = "Implicantes Primos Escenciales: " + ', '.join(str(i) for i in IPE)
+        doc.append(stringTmp1)
+        doc.append("\n")
+        remueveTerminos(chart,IPE) #Removemos los Implicantes Primos Escenciales de las columnas relacionadas de la impresión
     
-    resultado_final = [BuscarVariables(i) for i in IPE] # Resultado Final solamente con los Implicantes Primos Escenciales
-    print('\nSolución: F = '+' + '.join(''.join(i) for i in resultado_final))
+        resultado_final = [BuscarVariables(i) for i in IPE] # Resultado Final solamente con los Implicantes Primos Escenciales
+        stringTmp2 = 'Solución: F = '+' + '.join(''.join(i) for i in resultado_final)
+        doc.append(stringTmp2)
+
 
     input("\nPresione enter para salir y generar el PDF")
-
     doc.generate_pdf(nombrePDF, clean_tex=False, compiler='pdfLaTex')
+
 
 if __name__ == "__main__":
     main(sys.argv[2], sys.argv[4])
